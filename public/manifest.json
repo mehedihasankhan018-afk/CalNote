@@ -1,10 +1,14 @@
 {
   "name": "CalNote",
   "short_name": "CalNote",
+  "description": "Simple Bengali calculator notebook",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#111110",
   "theme_color": "#111110",
+  "lang": "bn",
   "icons": [
     {
       "src": "/icon-192.png",
