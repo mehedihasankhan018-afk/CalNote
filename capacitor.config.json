@@ -1,0 +1,5 @@
+{
+  "appId": "com.calnote.app",
+  "appName": "CalNote",
+  "webDir": "dist"
+}
