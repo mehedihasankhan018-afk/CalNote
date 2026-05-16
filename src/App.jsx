@@ -94,8 +94,10 @@ function BreatheLogo() {
         <span key={ch + delay} style={{
           display: "inline-block",
           fontFamily: "'Atma', sans-serif",
-          fontSize: 26, fontWeight: 700,
-          letterSpacing: "0.5px", color: "#e8e4dc",
+          fontSize: 26,
+          fontWeight: 700,
+          letterSpacing: "0.5px",
+          color: "#c8c4bc",
           animationName: "wBreath",
           animationDuration: "6s",
           animationTimingFunction: "ease-in-out",
@@ -110,11 +112,10 @@ function BreatheLogo() {
 
 export default function CalNote() {
   const saved = loadData();
-  const [title, setTitle] = useState(saved?.title ?? "আমার হিসাব");
-  const [lines, setLines] = useState(
+  const [title, setTitle]   = useState(saved?.title ?? "আমার হিসাব");
+  const [lines, setLines]   = useState(
     Array.isArray(saved?.lines) && saved.lines.length > 0 ? saved.lines : [""]
   );
-  /* isOnline must be declared before any effect that references setIsOnline */
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== "undefined" ? navigator.onLine : true
   );
@@ -168,28 +169,24 @@ export default function CalNote() {
     return () => window.removeEventListener("resize", setVh);
   }, []);
 
-  /* PWA + title setup */
+  /* PWA + meta setup */
   useEffect(() => {
     try {
-      /* page title */
       document.title = "CalNote";
 
-      /* viewport */
       let vp = document.querySelector("meta[name=viewport]");
       if (!vp) { vp = document.createElement("meta"); vp.name = "viewport"; document.head.appendChild(vp); }
       vp.content = "width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover";
 
-      /* theme — dark */
       let tc = document.querySelector("meta[name=theme-color]");
       if (!tc) { tc = document.createElement("meta"); tc.name = "theme-color"; document.head.appendChild(tc); }
-      tc.content = "#111110";
+      tc.content = "#0e0e0d";
 
-      /* manifest */
       if (!document.querySelector("link[rel=manifest]")) {
         const l = document.createElement("link"); l.rel = "manifest"; l.href = "/manifest.json";
         document.head.appendChild(l);
       }
-      /* apple */
+
       [["apple-mobile-web-app-capable","yes"],
        ["apple-mobile-web-app-status-bar-style","black-translucent"],
        ["apple-mobile-web-app-title","CalNote"]].forEach(([n, c]) => {
@@ -197,10 +194,8 @@ export default function CalNote() {
         if (!m) { m = document.createElement("meta"); m.name = n; document.head.appendChild(m); }
         m.content = c;
       });
-      /* service worker */
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/sw.js").catch(() => {});
-      }
+
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
     } catch {}
   }, []);
 
@@ -216,9 +211,7 @@ export default function CalNote() {
   };
 
   const handleTitleChange = (e) => {
-    const v = e.target.value;
-    setTitle(v);
-    triggerSave(v, lines);
+    const v = e.target.value; setTitle(v); triggerSave(v, lines);
   };
 
   const handleLineChange = (i, e) => {
@@ -259,196 +252,235 @@ export default function CalNote() {
   const bnM = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন",
                "জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
   const bnD = ["রবিবার","সোমবার","মঙ্গলবার","বুধবার","বৃহস্পতিবার","শুক্রবার","শনিবার"];
-  // Use Noto Serif Bengali for day name – renders conjuncts (যুক্তবর্ণ) correctly
   const dateFull = `${toBn(now.getDate())} ${bnM[now.getMonth()]}, ${toBn(now.getFullYear())}`;
   const dayName  = bnD[now.getDay()];
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Atma:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Atma:wght@300;400;500;600;700&display=swap');
 
-        *,*::before,*::after {
+        /* ── Hard reset ── */
+        *, *::before, *::after {
           box-sizing: border-box;
           -webkit-tap-highlight-color: transparent;
           margin: 0; padding: 0;
         }
 
+        /*
+         * Root dark fill — prevents ANY white edge on:
+         *   • iOS overscroll / rubber-band bounce
+         *   • Android status bar area
+         *   • Landscape safe-area gutters
+         */
+        :root { color-scheme: dark; }
+
         html {
-          height: 100%;
-          height: -webkit-fill-available;
-          /* Force dark scrollbar in supporting browsers */
-          color-scheme: dark;
+          background: #0e0e0d;
+          /* iOS: fill behind status bar */
+          min-height: -webkit-fill-available;
+          min-height: 100%;
         }
 
         body {
+          background: #0e0e0d;
           min-height: 100vh;
-          min-height: calc(var(--vh,1vh)*100);
-          background: #111110;
-          overscroll-behavior-y: none;
-          /* Fill status bar area on iOS with dark colour */
-          background-attachment: fixed;
+          min-height: -webkit-fill-available;
+          min-height: calc(var(--vh, 1vh) * 100);
+          overscroll-behavior: none;
+          /* Push content below notch; background fills the notch itself */
+          padding-top:    env(safe-area-inset-top,    0px);
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+          padding-left:   env(safe-area-inset-left,   0px);
+          padding-right:  env(safe-area-inset-right,  0px);
         }
 
-        /* ── Kill the green / blue outline on ALL inputs & textareas ── */
+        /* Kill all native input styling & green/blue outlines */
         input, textarea, button, select {
           outline: none !important;
           -webkit-appearance: none;
           appearance: none;
-          /* Remove any user-agent border that could be green */
           border: none;
         }
-        input:focus, textarea:focus { outline: none !important; box-shadow: none !important; }
-        /* Chrome autofill dark override */
+        input:focus, textarea:focus {
+          outline: none !important;
+          box-shadow: none !important;
+        }
+        textarea:invalid          { box-shadow: none !important; }
+        textarea:focus-visible    { outline: none !important; }
+
+        /* Chrome autofill dark fix */
         input:-webkit-autofill,
         input:-webkit-autofill:hover,
         input:-webkit-autofill:focus {
-          -webkit-box-shadow: 0 0 0 1000px #1c1c1b inset !important;
-          -webkit-text-fill-color: #e8e4dc !important;
+          -webkit-box-shadow: 0 0 0 1000px #1a1a19 inset !important;
+          -webkit-text-fill-color: #ddd9d0 !important;
         }
 
+        /* ── Animations ── */
         @keyframes wBreath {
-          0%,100% { font-weight:700; opacity:1;   }
-          35%     { font-weight:300; opacity:0.45; }
-          65%     { font-weight:700; opacity:1;    }
+          0%, 100% { font-weight:700; opacity:1;   }
+          35%      { font-weight:300; opacity:0.4; }
+          65%      { font-weight:700; opacity:1;   }
         }
-
         @keyframes totalPop {
-          0%   { transform: scale(1);    }
-          45%  { transform: scale(1.12); }
-          100% { transform: scale(1);    }
+          0%   { transform: scale(1);   }
+          45%  { transform: scale(1.1); }
+          100% { transform: scale(1);   }
         }
 
+        /* ── Page shell ── */
         .cn-page {
           min-height: 100vh;
-          min-height: calc(var(--vh,1vh)*100);
-          background: #111110;
+          min-height: calc(var(--vh, 1vh) * 100);
+          background: #0e0e0d;
           display: flex;
           justify-content: center;
-          /* Safe-area aware padding – fills behind notch & home indicator */
-          padding: calc(env(safe-area-inset-top, 0px) + 36px)
-                   calc(env(safe-area-inset-right, 0px) + 18px)
-                   calc(env(safe-area-inset-bottom, 0px) + 80px)
-                   calc(env(safe-area-inset-left, 0px) + 18px);
           font-family: 'Atma', sans-serif;
           overscroll-behavior: none;
+          /*
+           * Content padding accounts for safe areas PLUS visual breathing room.
+           * The background already fills safe areas via body padding above.
+           */
+          padding-top:    calc(env(safe-area-inset-top,    0px) + 36px);
+          padding-left:   calc(env(safe-area-inset-left,   0px) + 18px);
+          padding-right:  calc(env(safe-area-inset-right,  0px) + 18px);
+          padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
         }
 
-        .cn-wrap { width:100%; max-width:420px; display:flex; flex-direction:column; gap:18px; }
-
-        .cn-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
-
-        .cn-date-block { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
-        .cn-date-main  {
-          font-family:'Noto Serif Bengali', serif; font-size:12px; font-weight:600;
-          color:#5a5750; white-space:nowrap; line-height:1;
-        }
-        .cn-date-day   {
-          font-family:'Noto Serif Bengali', serif; font-size:11px; font-weight:400;
-          color:#3a3835; line-height:1;
+        .cn-wrap {
+          width: 100%; max-width: 420px;
+          display: flex; flex-direction: column; gap: 18px;
         }
 
-        /* ── Card / paper ── */
+        /* ── Header ── */
+        .cn-header {
+          display: flex; align-items: flex-start;
+          justify-content: space-between; gap: 12px;
+        }
+
+        .cn-date-block {
+          display: flex; flex-direction: column;
+          align-items: flex-end; gap: 3px;
+        }
+        /* Atma + letter-spacing renders Bengali conjuncts well enough at small sizes */
+        .cn-date-main {
+          font-family: 'Atma', sans-serif;
+          font-size: 12.5px; font-weight: 600;
+          color: #6a6660;
+          white-space: nowrap; line-height: 1.25;
+          letter-spacing: 0.25px;
+        }
+        .cn-date-day {
+          font-family: 'Atma', sans-serif;
+          font-size: 11.5px; font-weight: 600;
+          color: #7a7570; line-height: 1.25;
+          letter-spacing: 0.25px;
+        }
+
+        /* ── Card ── */
         .cn-paper {
-          background: #1c1c1b;
+          background: #1a1a19;
           border-radius: 20px;
-          border: 1px solid #2a2926;
+          border: 1px solid #272624;
           box-shadow:
-            0 1px 2px rgba(0,0,0,.4),
-            0 4px 16px rgba(0,0,0,.5),
-            0 18px 44px rgba(0,0,0,.45),
-            /* subtle inner top highlight */
+            0 1px 2px  rgba(0,0,0,.55),
+            0 6px 20px rgba(0,0,0,.55),
+            0 24px 52px rgba(0,0,0,.45),
             inset 0 1px 0 rgba(255,255,255,.04);
           overflow: hidden;
         }
 
-        .cn-title-row  { padding:20px 20px 16px; border-bottom:1px solid #242320; }
-        .cn-title-input {
-          width:100%; background:transparent; border:none !important; outline:none !important;
-          font-family:'Atma',sans-serif; font-size:19px; font-weight:700;
-          color:#e8e4dc; line-height:1.45; caret-color:#555;
+        /* ── Title row ── */
+        .cn-title-row {
+          padding: 18px 20px 14px;
+          border-bottom: 1px solid #252422;
         }
-        .cn-title-input::placeholder { color:#333230; }
+        .cn-title-input {
+          width: 100%; background: transparent;
+          border: none !important; outline: none !important;
+          font-family: 'Atma', sans-serif;
+          font-size: 20px; font-weight: 600;
+          color: #6a6660;
+          line-height: 1.45;
+          caret-color: #555;
+        }
+        .cn-title-input::placeholder { color: #323030; }
 
-        /* ── Lines ── */
-        .cn-lines { padding:4px 0 6px; }
+        /* ── Line rows ── */
+        .cn-lines { padding: 4px 0 6px; }
 
         .cn-row {
-          display:flex; align-items:flex-start;
-          border-bottom:1px solid #222120;
-          transition:background .12s;
+          display: flex; align-items: flex-start;
+          border-bottom: 1px solid #201f1e;
+          transition: background .12s;
         }
-        .cn-row:last-child   { border-bottom:none; }
-        .cn-row:focus-within { background:#202020; }
+        .cn-row:last-child   { border-bottom: none; }
+        .cn-row:focus-within { background: #1f1f1e; }
 
         .cn-num {
-          width:42px; flex-shrink:0; padding-top:15px;
-          display:flex; justify-content:center;
-          font-family:'Atma',sans-serif; font-size:11px; font-weight:600; color:#333230;
-          user-select:none; pointer-events:none;
+          width: 42px; flex-shrink: 0; padding-top: 13px;
+          display: flex; justify-content: center;
+          font-family: 'Atma', sans-serif;
+          font-size: 11px; font-weight: 600; color: #353331;
+          user-select: none; pointer-events: none;
         }
 
+        /* BIGGER text for body lines, better contrast */
         .cn-input {
-          flex:1; background:transparent;
-          /* No border, no outline, no box-shadow – kills the green line */
-          border:none !important; outline:none !important; box-shadow:none !important;
-          resize:none; overflow:hidden;
-          font-family:'Atma',sans-serif; font-size:16px; font-weight:400;
-          line-height:1.85; color:#d4cfc6;
-          padding:11px 8px 11px 0; min-height:48px;
-          caret-color:#555; word-break:break-word;
-          /* Prevent iOS rounding green border on validation */
+          flex: 1; background: transparent;
+          border: none !important; outline: none !important;
+          box-shadow: none !important;
           -webkit-border-radius: 0;
+          resize: none; overflow: hidden;
+          font-family: 'Atma', sans-serif;
+          font-size: 18px;          /* increased from 16px */
+          font-weight: 400;
+          line-height: 1.8;
+          color: #ddd9d0;           /* high-contrast warm white */
+          padding: 10px 8px 10px 0;
+          min-height: 48px;
+          caret-color: #666;
+          word-break: break-word;
         }
-        .cn-input::placeholder { color:#2e2c2a; }
-        .cn-input::-webkit-scrollbar { display:none; }
-        /* Firefox – remove red/green validation glow */
-        .cn-input:invalid { box-shadow: none !important; }
+        .cn-input::placeholder { color: #2b2a28; }
+        .cn-input::-webkit-scrollbar { display: none; }
 
-        /* ── Per-line result badge ── */
+        /* ── Per-line result ── */
         .cn-line-result {
-          align-self:center; margin-right:14px;
-          font-family:'Atma',sans-serif; font-size:13px; font-weight:600; color:#4a4844;
-          white-space:nowrap; opacity:0; transform:translateX(4px);
-          transition:opacity .2s,transform .2s; pointer-events:none;
+          align-self: center; margin-right: 14px;
+          font-family: 'Atma', sans-serif;
+          font-size: 13px; font-weight: 600; color: #52504d;
+          white-space: nowrap;
+          opacity: 0; transform: translateX(4px);
+          transition: opacity .2s, transform .2s;
+          pointer-events: none;
         }
-        .cn-line-result.show { opacity:1; transform:translateX(0); }
+        .cn-line-result.show { opacity: 1; transform: translateX(0); }
 
         /* ── Total bar ── */
         .cn-total-bar {
-          border-top:1.5px solid #242320;
-          padding:14px 20px 18px;
-          display:flex; justify-content:flex-end;
-          align-items:center;
+          border-top: 1px solid #252422;
+          padding: 14px 20px 18px;
+          display: flex; justify-content: flex-end; align-items: center;
         }
-
         .cn-total-value {
-          font-family:'Atma',sans-serif; font-size:34px; font-weight:700;
-          color:#e8e4dc; line-height:1; letter-spacing:-.5px; display:inline-block;
-          transition:color .2s;
+          font-family: 'Atma', sans-serif;
+          font-size: 36px; font-weight: 700;
+          color: #c8c4bc;
+          line-height: 1; letter-spacing: -.5px;
+          display: inline-block;
         }
         .cn-total-value.pulse {
           animation: totalPop .38s cubic-bezier(0.34,1.56,0.64,1) both;
         }
-        .cn-total-value.negative { color:#c06060; }
+        .cn-total-value.negative { color: #bf6060; }
 
-        /* ── Divider accent line (replaces green) ── */
-        .cn-accent-line {
-          height:2px; background:linear-gradient(90deg,#2a2926 0%,#3a3835 50%,#2a2926 100%);
-          margin:0;
-        }
-
-        /* ── Safe area / responsive ── */
-        @supports (padding-bottom: env(safe-area-inset-bottom)) {
-          .cn-page {
-            padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
-          }
-        }
-
-        @media (max-width:380px) {
-          .cn-total-value { font-size:28px; }
-          .cn-input        { font-size:15px; }
-          .cn-title-input  { font-size:17px; }
+        /* ── Responsive ── */
+        @media (max-width: 380px) {
+          .cn-total-value { font-size: 30px; }
+          .cn-input       { font-size: 17px; }
+          .cn-title-input { font-size: 18px; }
         }
       `}</style>
 
@@ -483,7 +515,6 @@ export default function CalNote() {
                     value={line}
                     rows={1}
                     spellCheck={false}
-                    /* noValidate-equivalent: disable browser form validation colouring */
                     required={false}
                     onChange={(e) => handleLineChange(i, e)}
                     onKeyDown={(e) => handleKeyDown(i, e)}
